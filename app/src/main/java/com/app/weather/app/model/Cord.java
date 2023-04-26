@@ -1,14 +1,12 @@
 package com.app.weather.app.model;
 
-import com.google.gson.annotations.SerializedName;
-
-public class Coord {
+public class Cord {
 
     private double lon;
 
     private double lat;
 
-    public Coord(double lon, double lat) {
+    public Cord(double lon, double lat) {
         this.lon = lon;
         this.lat = lat;
     }
