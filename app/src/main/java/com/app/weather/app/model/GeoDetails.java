@@ -6,12 +6,12 @@ public class GeoDetails {
 
     private final String city;
 
-    private Coord coord;
+    private Cord cord;
 
-    public GeoDetails(String country, String city, Coord coord) {
+    public GeoDetails(String country, String city, Cord cord) {
         this.country = country;
         this.city = city;
-        this.coord = coord;
+        this.cord = cord;
     }
 
     public String getCountry() {
@@ -22,11 +22,11 @@ public class GeoDetails {
         return city;
     }
 
-    public Coord getCoord() {
-        return coord;
+    public Cord getCoord() {
+        return cord;
     }
 
-    public void setCoord(Coord coord) {
-        this.coord = coord;
+    public void setCoord(Cord cord) {
+        this.cord = cord;
     }
 }
