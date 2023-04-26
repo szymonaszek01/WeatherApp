@@ -4,7 +4,7 @@ import androidx.annotation.NonNull;
 
 import com.app.weather.app.dto.OpenWeatherDataResponseDto;
 import com.app.weather.app.dto.OpenWeatherGeoResponseDto;
-import com.app.weather.app.util.constant.Constant;
+import com.app.weather.app.util.ConstantUtil;
 
 import java.util.List;
 
@@ -21,7 +21,7 @@ public class OpenWeatherApiImpl {
 
     private OpenWeatherApiImpl() {
         openWeatherApi = new retrofit2.Retrofit.Builder()
-                .baseUrl(Constant.OPEN_WEATHER_BASE_URL)
+                .baseUrl(ConstantUtil.OPEN_WEATHER_BASE_URL)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()
                 .create(OpenWeatherApi.class);
@@ -40,7 +40,7 @@ public class OpenWeatherApiImpl {
             @Override
             public void onResponse(@NonNull Call<List<OpenWeatherGeoResponseDto>> call, @NonNull Response<List<OpenWeatherGeoResponseDto>> response) {
                 if (response.body() == null) {
-                    callback.onFailure(new Exception(Constant.CITY_NOT_FOUND));
+                    callback.onFailure(new Exception(ConstantUtil.WEATHER_GEO_NOT_FOUND));
                     return;
                 }
 
@@ -49,7 +49,7 @@ public class OpenWeatherApiImpl {
 
             @Override
             public void onFailure(@NonNull Call<List<OpenWeatherGeoResponseDto>> call, @NonNull Throwable t) {
-                callback.onFailure(new Exception(Constant.RESPONSE_FAILED));
+                callback.onFailure(new Exception(ConstantUtil.RESPONSE_FAILED));
             }
         });
     }
@@ -59,7 +59,7 @@ public class OpenWeatherApiImpl {
             @Override
             public void onResponse(@NonNull Call<OpenWeatherDataResponseDto> call, @NonNull Response<OpenWeatherDataResponseDto> response) {
                 if (response.body() == null) {
-                    callback.onFailure(new Exception(Constant.WEATHER_DATA_NOT_FOUND));
+                    callback.onFailure(new Exception(ConstantUtil.WEATHER_DATA_NOT_FOUND));
                     return;
                 }
 
@@ -68,7 +68,7 @@ public class OpenWeatherApiImpl {
 
             @Override
             public void onFailure(@NonNull Call<OpenWeatherDataResponseDto> call, @NonNull Throwable t) {
-                callback.onFailure(new Exception(Constant.RESPONSE_FAILED));
+                callback.onFailure(new Exception(ConstantUtil.RESPONSE_FAILED));
             }
         });
     }
