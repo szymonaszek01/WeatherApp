@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_gravity="bottom"
+    android:gravity="bottom"
+    android:orientation="horizontal"
+    tools:context=".fragment.NavBarFragment">
+
+    <com.google.android.material.textfield.TextInputEditText
+        android:id="@+id/textInputEditText"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight=".85"
+        android:imeOptions="actionDone"
+        android:inputType="text"
+        android:textColor="@color/white"
+        android:text=""
+        android:textColorHint="@color/white"
+        android:textSize="30sp"
+        app:backgroundTint="@color/white"
+        app:colorPrimary="@color/white" />
+
+    <Space
+        android:layout_width="20sp"
+        android:layout_height="wrap_content" />
+
+    <ImageView
+        android:id="@+id/hamburger"
+        android:layout_width="50sp"
+        android:layout_height="50sp"
+        android:contentDescription="hamburger"
+        android:src="@drawable/hamburger"
+        android:clickable="true" />
+
+</LinearLayout>
