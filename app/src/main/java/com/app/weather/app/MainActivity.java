@@ -6,13 +6,20 @@ import android.util.Log;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.viewpager2.adapter.FragmentStateAdapter;
+import androidx.viewpager2.widget.ViewPager2;
 
+import com.app.weather.app.adapter.WeeklySliderAdapter;
 import com.app.weather.app.api.OpenWeatherApiCallback;
 import com.app.weather.app.api.OpenWeatherApiImpl;
 import com.app.weather.app.dto.OpenWeatherDataResponseDto;
 import com.app.weather.app.dto.OpenWeatherDto;
 import com.app.weather.app.dto.OpenWeatherGeoResponseDto;
+import com.app.weather.app.fragment.GeoDetailsFragment;
+import com.app.weather.app.fragment.NavBarFragment;
+import com.app.weather.app.fragment.WeatherDetailsFragment;
 import com.app.weather.app.model.FavouriteCityList;
 import com.app.weather.app.util.ConstantUtil;
 import com.app.weather.app.util.FileStorageUtil;
@@ -26,6 +33,14 @@ import java.util.TimerTask;
 public class MainActivity extends AppCompatActivity {
 
     private OpenWeatherDto openWeatherDto = null;
+
+    private final FragmentManager fragmentManager = getSupportFragmentManager();
+
+    private ViewPager2 viewPager;
+
+    private FragmentStateAdapter pagerAdapter;
+
+    private Integer numOfPages = 6;
 
     private String lastSelectedCityName = null;
 
@@ -55,9 +70,21 @@ public class MainActivity extends AppCompatActivity {
         lastSelectedCityName = FileStorageUtil.getInstance().getLastSelectedCityName();
         lastSelectedUnitSystem = FileStorageUtil.getInstance().getLastSelectedUnitSystem();
 
+        viewPager = findViewById(R.id.pager);
+        pagerAdapter = new WeeklySliderAdapter(this, numOfPages);
+        viewPager.setAdapter(pagerAdapter);
+        viewPager.setFocusedByDefault(false);
+        fragmentManager.beginTransaction()
+                .setReorderingAllowed(true)
+                .add(R.id.nav_bar_fragment, NavBarFragment.class, null)
+                .add(R.id.geo_details_fragment, GeoDetailsFragment.class, null)
+                .add(R.id.weather_details_fragment, WeatherDetailsFragment.class, null)
+                .commit();
+
         if (lastSelectedCityName != null) {
             openWeatherDto = FileStorageUtil.getInstance().getOpenWeatherDto(lastSelectedCityName);
             myViewModel.setOpenWeatherDto(openWeatherDto);
+            viewPager.setCurrentItem(0);
         }
 
         if (OpenWeatherUtil.getInstance().isConnectedToNetwork(getApplicationContext())) {
