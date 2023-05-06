@@ -14,7 +14,6 @@ import com.app.weather.app.model.GeoDetails;
 import com.app.weather.app.model.Main;
 import com.app.weather.app.model.WeatherDetailsBase;
 import com.app.weather.app.model.WeatherDetailsCurrent;
-import com.app.weather.app.viewmodel.MyViewModel;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -33,20 +32,18 @@ public class OpenWeatherUtil {
         return openWeatherUtil;
     }
 
-    public void geoDetailsMapper(MyViewModel myViewModel, OpenWeatherGeoResponseDto openWeatherGeoResponseDto) {
-        GeoDetails geoDetails = new GeoDetails(
+    public GeoDetails geoDetailsMapper(OpenWeatherGeoResponseDto openWeatherGeoResponseDto) {
+        return new GeoDetails(
                 openWeatherGeoResponseDto.getCountry(),
                 openWeatherGeoResponseDto.getName(),
                 new Cord(openWeatherGeoResponseDto.getLon(), openWeatherGeoResponseDto.getLat())
         );
-
-        myViewModel.setGeoDetails(geoDetails);
     }
 
-    public void weatherDetailsMapper(MyViewModel myViewModel, OpenWeatherDataResponseDto openWeatherDataResponseDto) {
+    public WeatherDetailsCurrent weatherDetailsCurrentMapper(OpenWeatherDataResponseDto openWeatherDataResponseDto) {
         Current current = openWeatherDataResponseDto.getCurrent();
 
-        WeatherDetailsCurrent weatherDetailsCurrent = new WeatherDetailsCurrent(
+        return new WeatherDetailsCurrent(
                 new Main(current.getTemp(), current.getPressure(), current.getWindSpeed(), current.getHumidity()),
                 current.getWeatherList()[0].getIcon(),
                 current.getDt(),
@@ -54,30 +51,30 @@ public class OpenWeatherUtil {
                 current.getVisibility(),
                 openWeatherDataResponseDto.getTimezoneOffset()
         );
+    }
 
-        List<WeatherDetailsBase> weatherDetailsBaseList = Arrays.stream(openWeatherDataResponseDto.getDailyList()).sequential().map(daily -> new WeatherDetailsBase(
+    public List<WeatherDetailsBase> weatherDetailsBaseListMapper(OpenWeatherDataResponseDto openWeatherDataResponseDto) {
+        return Arrays.stream(openWeatherDataResponseDto.getDailyList()).sequential().map(daily -> new WeatherDetailsBase(
                 new Main(daily.getTemp().getDay(), daily.getPressure(), daily.getWindSpeed(), daily.getHumidity()),
                 daily.getWeatherList()[0].getIcon(),
                 daily.getDt(),
                 FileStorageUtil.getInstance().getLastSelectedUnitSystem()
         )).collect(Collectors.toList());
-
-        myViewModel.setWeatherDetailsCurrent(weatherDetailsCurrent);
-        myViewModel.setWeatherDetails(weatherDetailsBaseList);
     }
 
-    public void addCitiesFromFileStorage(HashMap<String, List<String>> expandableListDetail) {
-        List<String> cities = FileStorageUtil.getInstance().getAllKeys()
-                .stream()
-                .filter(key -> !ConstantUtil.LAST_SELECTED_CITY_NAME.equals(key) && !ConstantUtil.LAST_SELECTED_UNIT_SYSTEM.equals(key))
-                .collect(Collectors.toList());
-
-        expandableListDetail.put("Selected cities", cities);
+    public void getFavouriteCities(HashMap<String, List<String>> expandableListDetail) {
+        List<String> cities = FileStorageUtil.getInstance().getFavouriteCityList().getFavouriteCities();
+        expandableListDetail.put("Favourite cities", cities);
     }
 
-    public void addUnitSystems(HashMap<String, List<String>> expandableListDetail) {
+    public void getUnitSystems(HashMap<String, List<String>> expandableListDetail) {
         List<String> unitSystems = Arrays.asList("Metric", "Imperial");
         expandableListDetail.put("Unit system", unitSystems);
+    }
+
+    public void getIntervals(HashMap<String, List<String>> expandableListDetail) {
+        List<String> intervals = Arrays.asList("15", "30", "1");
+        expandableListDetail.put("Refreshing interval", intervals);
     }
 
     public boolean isConnectedToNetwork(Context context) {

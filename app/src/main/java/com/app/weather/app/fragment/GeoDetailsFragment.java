@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -11,14 +12,25 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.app.weather.app.R;
+import com.app.weather.app.dto.OpenWeatherDto;
+import com.app.weather.app.model.FavouriteCityList;
+import com.app.weather.app.model.GeoDetails;
+import com.app.weather.app.model.WeatherDetailsCurrent;
 import com.app.weather.app.util.ConstantUtil;
+import com.app.weather.app.util.FileStorageUtil;
+import com.app.weather.app.util.OpenWeatherUtil;
 import com.app.weather.app.viewmodel.MyViewModel;
 import com.bumptech.glide.Glide;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.util.List;
 
 public class GeoDetailsFragment extends Fragment {
+
+    private OpenWeatherDto openWeatherDto = null;
+
+    private Button btnAddToFavorites;
 
     private TextView textViewCityName;
 
@@ -59,17 +71,38 @@ public class GeoDetailsFragment extends Fragment {
         textViewDate = view.findViewById(R.id.textViewDate);
         textViewTime = view.findViewById(R.id.textViewTime);
 
+        btnAddToFavorites = view.findViewById(R.id.btn_add_to_favorites);
         view.setVisibility(View.INVISIBLE);
         myViewModel = new ViewModelProvider(requireActivity()).get(MyViewModel.class);
 
         onGeoDetailsObserve();
-        onWeatherDetailsCurrentObserve();
+
+        btnAddToFavorites.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                List<String> cities = FileStorageUtil.getInstance().getFavouriteCityList().getFavouriteCities();
+                if (cities.contains(cityName)) {
+                    OpenWeatherUtil.getInstance().showToast(getContext(), "\"" + cityName + "\" exists in favourite city list");
+                    return;
+                }
+
+                cities.add(cityName);
+                FileStorageUtil.getInstance().updateFavouriteCityList(new FavouriteCityList(cities));
+                FileStorageUtil.getInstance().saveOpenWeatherDto(openWeatherDto);
+
+                OpenWeatherUtil.getInstance().showToast(getContext(), "\"" + cityName + "\" was added to favourite city list");
+            }
+        });
 
         return view;
     }
 
     private void onGeoDetailsObserve() {
-        myViewModel.getGeoDetails().observe(getViewLifecycleOwner(), geoDetails -> {
+        myViewModel.getOpenWeatherDto().observe(getViewLifecycleOwner(), data -> {
+            openWeatherDto = data;
+            GeoDetails geoDetails = OpenWeatherUtil.getInstance().geoDetailsMapper(data.getOpenWeatherGeoResponseDto());
+            WeatherDetailsCurrent weatherDetailsCurrent = OpenWeatherUtil.getInstance().weatherDetailsCurrentMapper(openWeatherDto.getOpenWeatherDataResponseDto());
+
             String lat = ConstantUtil.LAT + (geoDetails != null ? String.valueOf(geoDetails.getCoord().getLat()) : ConstantUtil.BLANK);
             String lon = ConstantUtil.LON + (geoDetails != null ? String.valueOf(geoDetails.getCoord().getLon()) : ConstantUtil.BLANK);
 
@@ -78,11 +111,7 @@ public class GeoDetailsFragment extends Fragment {
             textViewCityName.setText(cityName);
 
             onClickTextViewCityNameEventListener();
-        });
-    }
 
-    private void onWeatherDetailsCurrentObserve() {
-        myViewModel.getWeatherDetailsCurrent().observe(getViewLifecycleOwner(), weatherDetailsCurrent -> {
             LocalDateTime localDateTime = LocalDateTime.ofEpochSecond(weatherDetailsCurrent.getDt(), 0, OffsetDateTime.now().getOffset());
             localDateTime = localDateTime.plusSeconds(weatherDetailsCurrent.getTimezoneOffset());
 

@@ -13,11 +13,13 @@ import com.app.weather.app.api.OpenWeatherApiImpl;
 import com.app.weather.app.dto.OpenWeatherDataResponseDto;
 import com.app.weather.app.dto.OpenWeatherDto;
 import com.app.weather.app.dto.OpenWeatherGeoResponseDto;
+import com.app.weather.app.model.FavouriteCityList;
 import com.app.weather.app.util.ConstantUtil;
 import com.app.weather.app.util.FileStorageUtil;
 import com.app.weather.app.util.OpenWeatherUtil;
 import com.app.weather.app.viewmodel.MyViewModel;
 
+import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -31,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
 
     private MyViewModel myViewModel;
 
-    private Timer timer = new Timer();
+    private final Timer timer = new Timer();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,13 +46,18 @@ public class MainActivity extends AppCompatActivity {
         myViewModel = new ViewModelProvider(this).get(MyViewModel.class);
         FileStorageUtil.createInstance(this.getPreferences(Context.MODE_PRIVATE));
 
+        // --- TO REMOVE AFTER FIRST RUN --- //
+//         FileStorageUtil.getInstance().getAllKeys().forEach(key -> FileStorageUtil.getInstance().removeOpenWeatherDto(key));
+//         FileStorageUtil.getInstance().saveLastSelectedUnitSystem("Metric");
+//         FileStorageUtil.getInstance().updateFavouriteCityList(new FavouriteCityList(new ArrayList<>()));
+        // --- TO REMOVE AFTER FIRST RUN --- //
+
         lastSelectedCityName = FileStorageUtil.getInstance().getLastSelectedCityName();
         lastSelectedUnitSystem = FileStorageUtil.getInstance().getLastSelectedUnitSystem();
 
         if (lastSelectedCityName != null) {
             openWeatherDto = FileStorageUtil.getInstance().getOpenWeatherDto(lastSelectedCityName);
-            OpenWeatherUtil.getInstance().geoDetailsMapper(myViewModel, openWeatherDto.getOpenWeatherGeoResponseDto());
-            OpenWeatherUtil.getInstance().weatherDetailsMapper(myViewModel, openWeatherDto.getOpenWeatherDataResponseDto());
+            myViewModel.setOpenWeatherDto(openWeatherDto);
         }
 
         if (OpenWeatherUtil.getInstance().isConnectedToNetwork(getApplicationContext())) {
@@ -59,31 +66,32 @@ public class MainActivity extends AppCompatActivity {
             OpenWeatherUtil.getInstance().showToast(getApplicationContext(), "No network connection");
         }
 
-        myViewModel.getGeoDetails().observe(this, geoDetails -> lastSelectedCityName = geoDetails.getCity());
-        myViewModel.getWeatherDetailsCurrent().observe(this, weatherDetailsCurrent -> lastSelectedUnitSystem = weatherDetailsCurrent.getUnitSystem());
+        myViewModel.getOpenWeatherDto().observe(this, data -> openWeatherDto = data);
 
-        timer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                if (lastSelectedCityName != null) {
-                    onWeatherGeoResponse(lastSelectedCityName);
-                }
-            }
-        }, 0, ConstantUtil.INTERVAL);
+//        timer.scheduleAtFixedRate(new TimerTask() {
+//            @Override
+//            public void run() {
+//                if (lastSelectedCityName != null) {
+//                    onWeatherGeoResponse(lastSelectedCityName);
+//                }
+//            }
+//        }, 0, ConstantUtil.INTERVAL);
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        FileStorageUtil.getInstance().saveLastSelectedCityName(lastSelectedCityName);
-        FileStorageUtil.getInstance().saveLastSelectedUnitSystem(lastSelectedUnitSystem);
+        if (openWeatherDto != null) {
+            FileStorageUtil.getInstance().saveLastSelectedCityName(openWeatherDto.getOpenWeatherGeoResponseDto().getName());
+            FileStorageUtil.getInstance().saveLastSelectedUnitSystem(OpenWeatherUtil.getInstance().weatherDetailsCurrentMapper(openWeatherDto.getOpenWeatherDataResponseDto()).getUnitSystem());
+            FileStorageUtil.getInstance().saveOpenWeatherDto(openWeatherDto);
+        }
     }
 
     private void onWeatherGeoResponse(String cityName) {
         OpenWeatherApiImpl.getInstance().getOpenWeatherGeo(cityName, new OpenWeatherApiCallback<OpenWeatherGeoResponseDto>() {
             @Override
             public void onSuccess(OpenWeatherGeoResponseDto body) {
-                OpenWeatherUtil.getInstance().geoDetailsMapper(myViewModel, body);
                 openWeatherDto.setOpenWeatherGeoResponseDto(body);
                 onWeatherDataResponse(body.getLat(), body.getLon());
                 Log.i(ConstantUtil.WEATHER_GEO_RESPONSE, body.toString());
@@ -100,9 +108,8 @@ public class MainActivity extends AppCompatActivity {
         OpenWeatherApiImpl.getInstance().getOpenWeatherData(lat, lon, new OpenWeatherApiCallback<OpenWeatherDataResponseDto>() {
             @Override
             public void onSuccess(OpenWeatherDataResponseDto body) {
-                OpenWeatherUtil.getInstance().weatherDetailsMapper(myViewModel, body);
                 openWeatherDto.setOpenWeatherDataResponseDto(body);
-                FileStorageUtil.getInstance().saveOpenWeatherDto(openWeatherDto);
+                myViewModel.setOpenWeatherDto(openWeatherDto);
                 Log.i(ConstantUtil.WEATHER_DATA_RESPONSE, body.toString());
             }
 

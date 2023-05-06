@@ -1,5 +1,7 @@
 package com.app.weather.app.util;
 
+import java.util.List;
+
 public class ConstantUtil {
 
     public static final String OPEN_WEATHER_API_KEY = "b501aec6bea71842fcfd4fc9c890dc56";
@@ -25,6 +27,10 @@ public class ConstantUtil {
     public static final String LAST_SELECTED_CITY_NAME = "LastSelectedCityName";
 
     public static final String OPEN_WEATHER_DTO_NOT_FOUND = "OPEN-WEATHER-DTO-NOT-FOUND";
+
+    public static final String FAVOURITE_CITY_LIST = "FAVOURITE_CITY_LIST";
+
+    public static final String FAVOURITE_CITY_LIST_NOT_FOUND = "FAVOURITE_CITY_LIST_NOT_FOUND";
 
     public static final String BLANK = "";
 

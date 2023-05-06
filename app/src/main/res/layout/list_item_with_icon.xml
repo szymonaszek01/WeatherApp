@@ -6,15 +6,25 @@
 
     <TextView
         android:id="@+id/expandedListItemTextView"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical"
+        android:layout_weight=".92"
         android:gravity="center_vertical"
         android:paddingStart="20sp"
         android:paddingEnd="0sp"
-        android:paddingTop="17sp"
-        android:paddingBottom="17sp"
+        android:paddingBottom="0sp"
         android:textColor="@color/white"
         android:textSize="21sp" />
+
+    <ImageView
+        android:id="@+id/expandedListItemImageView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_weight=".08"
+        android:contentDescription="thrash"
+        android:gravity="center"
+        android:src="@drawable/thrash" />
 
 </LinearLayout>

@@ -26,8 +26,6 @@ import com.app.weather.app.dto.OpenWeatherDataResponseDto;
 import com.app.weather.app.dto.OpenWeatherDto;
 import com.app.weather.app.dto.OpenWeatherGeoResponseDto;
 import com.app.weather.app.util.ConstantUtil;
-import com.app.weather.app.util.FileStorageUtil;
-import com.app.weather.app.util.OpenWeatherUtil;
 import com.app.weather.app.viewmodel.MyViewModel;
 import com.google.android.material.textfield.TextInputEditText;
 
@@ -106,7 +104,6 @@ public class NavBarFragment extends Fragment {
                 OpenWeatherApiImpl.getInstance().getOpenWeatherGeo(cityName, new OpenWeatherApiCallback<OpenWeatherGeoResponseDto>() {
                     @Override
                     public void onSuccess(OpenWeatherGeoResponseDto body) {
-                        OpenWeatherUtil.getInstance().geoDetailsMapper(myViewModel, body);
                         openWeatherDto.setOpenWeatherGeoResponseDto(body);
                         onWeatherDataResponse(body.getLat(), body.getLon());
                         Log.i(ConstantUtil.WEATHER_GEO_RESPONSE, body.toString());
@@ -123,9 +120,8 @@ public class NavBarFragment extends Fragment {
                 OpenWeatherApiImpl.getInstance().getOpenWeatherData(lat, lon, new OpenWeatherApiCallback<OpenWeatherDataResponseDto>() {
                     @Override
                     public void onSuccess(OpenWeatherDataResponseDto body) {
-                        OpenWeatherUtil.getInstance().weatherDetailsMapper(myViewModel, body);
                         openWeatherDto.setOpenWeatherDataResponseDto(body);
-                        FileStorageUtil.getInstance().saveOpenWeatherDto(openWeatherDto);
+                        myViewModel.setOpenWeatherDto(openWeatherDto);
                         Log.i(ConstantUtil.WEATHER_DATA_RESPONSE, body.toString());
                     }
 

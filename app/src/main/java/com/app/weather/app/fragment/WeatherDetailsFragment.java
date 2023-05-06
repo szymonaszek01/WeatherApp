@@ -11,6 +11,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.app.weather.app.R;
+import com.app.weather.app.model.WeatherDetailsCurrent;
 import com.app.weather.app.util.ConstantUtil;
 import com.app.weather.app.util.OpenWeatherUtil;
 import com.app.weather.app.viewmodel.MyViewModel;
@@ -66,7 +67,9 @@ public class WeatherDetailsFragment extends Fragment {
     }
 
     private void onWeatherDetailsCurrentObserve() {
-        myViewModel.getWeatherDetailsCurrent().observe(getViewLifecycleOwner(), weatherDetailsCurrent -> {
+        myViewModel.getOpenWeatherDto().observe(getViewLifecycleOwner(), data -> {
+            WeatherDetailsCurrent weatherDetailsCurrent = OpenWeatherUtil.getInstance().weatherDetailsCurrentMapper(data.getOpenWeatherDataResponseDto());
+
             String temperature = weatherDetailsCurrent != null ? OpenWeatherUtil.getInstance().temperatureUnitSystemConverter(weatherDetailsCurrent.getMain().getTemp(), weatherDetailsCurrent.getUnitSystem(), ConstantUtil.SPACE) : ConstantUtil.BLANK;
             String pressure = weatherDetailsCurrent != null ? weatherDetailsCurrent.getMain().getPressure() + " hPa" : ConstantUtil.BLANK;
             String humidity = weatherDetailsCurrent != null ? weatherDetailsCurrent.getMain().getHumidity() + " %" : ConstantUtil.BLANK;

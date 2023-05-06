@@ -114,8 +114,8 @@ public class WeeklyFragment extends Fragment {
     }
 
     private void onWeatherDetailsWeeklyObserve() {
-        myViewModel.getWeatherDetailsWeekly().observe(getViewLifecycleOwner(), wDBaseList -> {
-            weatherDetailsBaseList = wDBaseList;
+        myViewModel.getOpenWeatherDto().observe(getViewLifecycleOwner(), data -> {
+            weatherDetailsBaseList = OpenWeatherUtil.getInstance().weatherDetailsBaseListMapper(data.getOpenWeatherDataResponseDto());
             selectedWeatherDetailsBase = weatherDetailsBaseList.get(selectedIndex);
 
             updateTextViews();

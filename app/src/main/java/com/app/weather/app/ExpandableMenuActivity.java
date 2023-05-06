@@ -16,6 +16,8 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.app.weather.app.model.FavouriteCityList;
 import com.app.weather.app.util.FileStorageUtil;
 import com.app.weather.app.util.OpenWeatherUtil;
 
@@ -49,8 +51,9 @@ public class ExpandableMenuActivity extends AppCompatActivity {
         lastSelectedCityName = FileStorageUtil.getInstance().getLastSelectedCityName();
         lastSelectedUnitSystem = FileStorageUtil.getInstance().getLastSelectedUnitSystem();
 
-        OpenWeatherUtil.getInstance().addUnitSystems(expandableListDetail);
-        OpenWeatherUtil.getInstance().addCitiesFromFileStorage(expandableListDetail);
+        OpenWeatherUtil.getInstance().getUnitSystems(expandableListDetail);
+        OpenWeatherUtil.getInstance().getFavouriteCities(expandableListDetail);
+        OpenWeatherUtil.getInstance().getIntervals(expandableListDetail);
         expandableListTitle = new ArrayList<>(expandableListDetail.keySet());
 
         ExpandableListView expandableListView = findViewById(R.id.expandableListView);
@@ -74,23 +77,55 @@ public class ExpandableMenuActivity extends AppCompatActivity {
             @Override
             public View getChildView(int listPosition, final int expandedListPosition, boolean isLastChild, View convertView, ViewGroup parent) {
                 final String expandedListText = (String) getChild(listPosition, expandedListPosition);
-                if (convertView == null) {
-                    LayoutInflater layoutInflater = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                final String listTitle = (String) getGroup(listPosition);
+
+                LayoutInflater layoutInflater = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                if (listTitle.equals("Unit system") || listTitle.equals("Refreshing interval")) {
                     convertView = layoutInflater.inflate(R.layout.list_item, null);
+                } else {
+                    convertView = layoutInflater.inflate(R.layout.list_item_with_icon, null);
                 }
 
-                TextView expandedListTextView = convertView.findViewById(R.id.expandedListItem);
+                TextView expandedListTextView = convertView.findViewById(R.id.expandedListItemTextView);
                 expandedListTextView.setText(expandedListText);
-                expandedListTextView.setTextSize(20);
-                expandedListTextView.setPadding(20, 35, 0, 35);
-                expandedListTextView.setTextColor(isLastSelectedCity(expandedListTextView) || isLastSelectedUnitSystem(expandedListTextView) ? Color.GREEN : Color.WHITE);
+
+                if (listTitle.equals("Favourite cities")) {
+                    ImageView expandedListImageView = convertView.findViewById(R.id.expandedListItemImageView);
+
+                    expandedListImageView.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            if (isUnitSystemTextView(expandedListTextView)) {
+                                FileStorageUtil.getInstance().saveLastSelectedUnitSystem(expandedListTextView.getText().toString());
+                            }
+
+                            String cityToRemove = expandedListTextView.getText().toString();
+                            List<String> cities = FileStorageUtil.getInstance().getFavouriteCityList().getFavouriteCities();
+                            cities.remove(cityToRemove);
+                            FileStorageUtil.getInstance().updateFavouriteCityList(new FavouriteCityList(cities));
+
+                            if (!cityToRemove.equals(FileStorageUtil.getInstance().getLastSelectedCityName())) {
+                                FileStorageUtil.getInstance().removeOpenWeatherDto(cityToRemove);
+                            }
+
+                            OpenWeatherUtil.getInstance().showToast(getApplicationContext(), "\"" + cityToRemove + "\" was removed from favourite city list");
+
+                            startActivity(intent);
+                        }
+                    });
+                }
+
                 expandedListTextView.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         if (isUnitSystemTextView(expandedListTextView)) {
                             FileStorageUtil.getInstance().saveLastSelectedUnitSystem(expandedListTextView.getText().toString());
+
+                            OpenWeatherUtil.getInstance().showToast(getApplicationContext(), "Selected \"" + expandedListTextView.getText().toString() + "\" unit system");
                         } else {
                             FileStorageUtil.getInstance().saveLastSelectedCityName(expandedListTextView.getText().toString());
+
+                            OpenWeatherUtil.getInstance().showToast(getApplicationContext(), "Selected \"" + expandedListTextView.getText().toString() + "\"");
                         }
 
                         startActivity(intent);
@@ -190,14 +225,6 @@ public class ExpandableMenuActivity extends AppCompatActivity {
             @Override
             public long getCombinedGroupId(long l) {
                 return 0;
-            }
-
-            private boolean isLastSelectedCity(TextView textView) {
-                return lastSelectedCityName != null && lastSelectedCityName.equals(textView.getText().toString());
-            }
-
-            private boolean isLastSelectedUnitSystem(TextView textView) {
-                return lastSelectedUnitSystem != null && lastSelectedUnitSystem.equals(textView.getText().toString());
             }
 
             private boolean isUnitSystemTextView(TextView textView) {

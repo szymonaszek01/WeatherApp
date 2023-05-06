@@ -71,11 +71,22 @@
 
             <ImageView
                 android:id="@+id/imageViewWeather"
-                android:layout_width="100sp"
-                android:layout_height="100sp"
+                android:layout_width="80sp"
+                android:layout_height="80sp"
                 android:layout_gravity="end"
-                android:gravity="center"
                 android:contentDescription="weather" />
+
+            <Button
+                android:id="@+id/btn_add_to_favorites"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:paddingTop="4sp"
+                android:paddingBottom="4sp"
+                android:textSize="11sp"
+                android:backgroundTint="#304FFE"
+                android:text="Add to Favorites" />
+
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>
