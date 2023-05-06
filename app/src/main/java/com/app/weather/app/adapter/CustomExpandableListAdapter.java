@@ -1,7 +1,6 @@
 package com.app.weather.app.adapter;
 
 import android.content.Context;
-import android.content.Intent;
 import android.database.DataSetObserver;
 import android.graphics.Color;
 import android.view.LayoutInflater;
@@ -11,10 +10,14 @@ import android.widget.ExpandableListAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.fragment.app.DialogFragment;
+
 import com.app.weather.app.R;
 import com.app.weather.app.model.FavouriteCityList;
+import com.app.weather.app.util.ConstantUtil;
 import com.app.weather.app.util.FileStorageUtil;
 import com.app.weather.app.util.OpenWeatherUtil;
+import com.app.weather.app.viewmodel.MyViewModel;
 
 import java.util.HashMap;
 import java.util.List;
@@ -27,13 +30,16 @@ public class CustomExpandableListAdapter implements ExpandableListAdapter {
 
     private final Context context;
 
-    private final Intent intent;
+    private final DialogFragment dialogFragment;
 
-    public CustomExpandableListAdapter(List<String> listTitles, HashMap<String, List<String>> listDetails, Context context, Intent intent) {
+    private final MyViewModel myViewModel;
+
+    public CustomExpandableListAdapter(List<String> listTitles, HashMap<String, List<String>> listDetails, Context context, DialogFragment dialogFragment, MyViewModel myViewModel) {
         this.listTitles = listTitles;
         this.listDetails = listDetails;
         this.context = context;
-        this.intent = intent;
+        this.dialogFragment = dialogFragment;
+        this.myViewModel = myViewModel;
     }
 
     @Override
@@ -79,15 +85,14 @@ public class CustomExpandableListAdapter implements ExpandableListAdapter {
                     String cityToRemove = expandedListTextView.getText().toString();
                     List<String> cities = FileStorageUtil.getInstance().getFavouriteCityList().getFavouriteCities();
                     cities.remove(cityToRemove);
-                    FileStorageUtil.getInstance().updateFavouriteCityList(new FavouriteCityList(cities));
+                    FileStorageUtil.getInstance().saveFavouriteCityList(new FavouriteCityList(cities));
 
                     if (!cityToRemove.equals(FileStorageUtil.getInstance().getLastSelectedCityName())) {
                         FileStorageUtil.getInstance().removeOpenWeatherDto(cityToRemove);
                     }
 
                     OpenWeatherUtil.getInstance().showToast(context, "\"" + cityToRemove + "\" was removed from favourite city list");
-
-                    context.startActivity(intent);
+                    dialogFragment.dismiss();
                 }
             });
         }
@@ -95,18 +100,24 @@ public class CustomExpandableListAdapter implements ExpandableListAdapter {
         expandedListTextView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (isUnitSystemTextView(expandedListTextView)) {
+                if (listTitle.equals("Unit system")) {
                     FileStorageUtil.getInstance().saveLastSelectedUnitSystem(expandedListTextView.getText().toString());
+                    myViewModel.setSelectedUnitSystem(expandedListTextView.getText().toString());
 
                     OpenWeatherUtil.getInstance().showToast(context, "Selected \"" + expandedListTextView.getText().toString() + "\" unit system");
+                } else if (listTitle.equals("Refreshing interval")) {
+                    FileStorageUtil.getInstance().saveLastSelectedRefreshingInterval(expandedListTextView.getText().toString().split(ConstantUtil.SPACE)[0]);
+                    myViewModel.setSelectedRefreshingInterval(expandedListTextView.getText().toString().split(ConstantUtil.SPACE)[0]);
+
+                    OpenWeatherUtil.getInstance().showToast(context, "Selected \"" + expandedListTextView.getText().toString() + "\" refreshing interval");
                 } else {
                     FileStorageUtil.getInstance().saveLastSelectedCityName(expandedListTextView.getText().toString());
+                    myViewModel.setOpenWeatherDto(FileStorageUtil.getInstance().getOpenWeatherDto(expandedListTextView.getText().toString()));
 
                     OpenWeatherUtil.getInstance().showToast(context, "Selected \"" + expandedListTextView.getText().toString() + "\"");
                 }
 
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                context.startActivity(intent);
+                dialogFragment.dismiss();
             }
         });
 
@@ -209,5 +220,4 @@ public class CustomExpandableListAdapter implements ExpandableListAdapter {
         String text = textView.getText().toString();
         return text.equals("Metric") || text.equals("Imperial");
     }
-
 }

@@ -87,7 +87,7 @@ public class GeoDetailsFragment extends Fragment {
                 }
 
                 cities.add(cityName);
-                FileStorageUtil.getInstance().updateFavouriteCityList(new FavouriteCityList(cities));
+                FileStorageUtil.getInstance().saveFavouriteCityList(new FavouriteCityList(cities));
                 FileStorageUtil.getInstance().saveOpenWeatherDto(openWeatherDto);
 
                 OpenWeatherUtil.getInstance().showToast(getContext(), "\"" + cityName + "\" was added to favourite city list");

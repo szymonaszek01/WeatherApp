@@ -7,7 +7,6 @@ import com.app.weather.app.model.FavouriteCityList;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import java.util.List;
 import java.util.Set;
 
 public class FileStorageUtil {
@@ -109,7 +108,7 @@ public class FileStorageUtil {
         return gson.fromJson(favouriteCityList, FavouriteCityList.class);
     }
 
-    public void updateFavouriteCityList(FavouriteCityList favouriteCityList) {
+    public void saveFavouriteCityList(FavouriteCityList favouriteCityList) {
         if (favouriteCityList == null) {
             return;
         }
@@ -118,6 +117,27 @@ public class FileStorageUtil {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
         editor.putString(ConstantUtil.FAVOURITE_CITY_LIST, gson.toJson(favouriteCityList)).apply();
+    }
+
+    public String getLastSelectedRefreshingInterval() {
+        String lastSelectedRefreshingInterval = sharedPreferences.getString(ConstantUtil.LAST_SELECTED_REFRESHING_INTERVAL, ConstantUtil.LAST_SELECTED_REFRESHING_INTERVAL_NOT_FOUND);
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        if (ConstantUtil.LAST_SELECTED_REFRESHING_INTERVAL_NOT_FOUND.equals(lastSelectedRefreshingInterval)) {
+            return null;
+        }
+
+        return gson.fromJson(lastSelectedRefreshingInterval, String.class);
+    }
+
+    public void saveLastSelectedRefreshingInterval(String lastSelectedRefreshingInterval) {
+        if (lastSelectedRefreshingInterval == null) {
+            return;
+        }
+
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
+        editor.putString(ConstantUtil.LAST_SELECTED_REFRESHING_INTERVAL, gson.toJson(lastSelectedRefreshingInterval)).apply();
     }
 
     public Set<String> getAllKeys() {

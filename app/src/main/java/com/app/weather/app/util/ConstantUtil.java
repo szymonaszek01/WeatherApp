@@ -1,7 +1,5 @@
 package com.app.weather.app.util;
 
-import java.util.List;
-
 public class ConstantUtil {
 
     public static final String OPEN_WEATHER_API_KEY = "b501aec6bea71842fcfd4fc9c890dc56";
@@ -30,6 +28,10 @@ public class ConstantUtil {
 
     public static final String FAVOURITE_CITY_LIST = "FAVOURITE_CITY_LIST";
 
+    public static final String LAST_SELECTED_REFRESHING_INTERVAL = "LAST_SELECTED_REFRESHING_INTERVAL";
+
+    public static final String LAST_SELECTED_REFRESHING_INTERVAL_NOT_FOUND = "LAST_SELECTED_REFRESHING_INTERVAL_NOT_FOUND";
+
     public static final String FAVOURITE_CITY_LIST_NOT_FOUND = "FAVOURITE_CITY_LIST_NOT_FOUND";
 
     public static final String BLANK = "";
@@ -46,5 +48,5 @@ public class ConstantUtil {
 
     public static final String NEW_LINE = "\n";
 
-    public static final int INTERVAL = 10 * 1000;
+    public static final String INTERVAL = "30";
 }

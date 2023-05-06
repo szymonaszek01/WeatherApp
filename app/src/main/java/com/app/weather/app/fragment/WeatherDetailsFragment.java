@@ -32,6 +32,10 @@ public class WeatherDetailsFragment extends Fragment {
 
     private MyViewModel myViewModel;
 
+    private WeatherDetailsCurrent selectedWeatherDetailsCurrent = null;
+
+    private String selectedUnitSystem = null;
+
     public WeatherDetailsFragment() {
     }
 
@@ -62,30 +66,41 @@ public class WeatherDetailsFragment extends Fragment {
         myViewModel = new ViewModelProvider(requireActivity()).get(MyViewModel.class);
 
         onWeatherDetailsCurrentObserve();
+        onSelectedUnitSystemObserve();
 
         return view;
     }
 
     private void onWeatherDetailsCurrentObserve() {
         myViewModel.getOpenWeatherDto().observe(getViewLifecycleOwner(), data -> {
-            WeatherDetailsCurrent weatherDetailsCurrent = OpenWeatherUtil.getInstance().weatherDetailsCurrentMapper(data.getOpenWeatherDataResponseDto());
-
-            String temperature = weatherDetailsCurrent != null ? OpenWeatherUtil.getInstance().temperatureUnitSystemConverter(weatherDetailsCurrent.getMain().getTemp(), weatherDetailsCurrent.getUnitSystem(), ConstantUtil.SPACE) : ConstantUtil.BLANK;
-            String pressure = weatherDetailsCurrent != null ? weatherDetailsCurrent.getMain().getPressure() + " hPa" : ConstantUtil.BLANK;
-            String humidity = weatherDetailsCurrent != null ? weatherDetailsCurrent.getMain().getHumidity() + " %" : ConstantUtil.BLANK;
-            String wind = weatherDetailsCurrent != null ? OpenWeatherUtil.getInstance().windSpeedUnitSystemConverter(weatherDetailsCurrent.getMain().getWind(), weatherDetailsCurrent.getUnitSystem(), ConstantUtil.SPACE) : ConstantUtil.BLANK;
-            String visibility = weatherDetailsCurrent != null ? weatherDetailsCurrent.getVisibility() + " m" : ConstantUtil.BLANK;
-
-            textViewTemp.setText(temperature);
-            textViewPressure.setText(pressure);
-            textViewHumidity.setText(humidity);
-            textViewWind.setText(wind);
-            textViewVisibility.setText(visibility);
-
-            View view = getView();
-            if (view != null) {
-                view.setVisibility(View.VISIBLE);
-            }
+            selectedWeatherDetailsCurrent = OpenWeatherUtil.getInstance().weatherDetailsCurrentMapper(data.getOpenWeatherDataResponseDto());
+            updateFragment();
         });
+    }
+
+    private void onSelectedUnitSystemObserve() {
+        myViewModel.getSelectedUnitSystem().observe(getViewLifecycleOwner(), data -> {
+            selectedUnitSystem = data;
+            updateFragment();
+        });
+    }
+
+    private void updateFragment() {
+        String temperature = selectedWeatherDetailsCurrent != null ? OpenWeatherUtil.getInstance().temperatureUnitSystemConverter(selectedWeatherDetailsCurrent.getMain().getTemp(), selectedUnitSystem, ConstantUtil.SPACE) : ConstantUtil.BLANK;
+        String pressure = selectedWeatherDetailsCurrent != null ? selectedWeatherDetailsCurrent.getMain().getPressure() + " hPa" : ConstantUtil.BLANK;
+        String humidity = selectedWeatherDetailsCurrent != null ? selectedWeatherDetailsCurrent.getMain().getHumidity() + " %" : ConstantUtil.BLANK;
+        String wind = selectedWeatherDetailsCurrent != null ? OpenWeatherUtil.getInstance().windSpeedUnitSystemConverter(selectedWeatherDetailsCurrent.getMain().getWind(), selectedUnitSystem, ConstantUtil.SPACE) : ConstantUtil.BLANK;
+        String visibility = selectedWeatherDetailsCurrent != null ? selectedWeatherDetailsCurrent.getVisibility() + " m" : ConstantUtil.BLANK;
+
+        textViewTemp.setText(temperature);
+        textViewPressure.setText(pressure);
+        textViewHumidity.setText(humidity);
+        textViewWind.setText(wind);
+        textViewVisibility.setText(visibility);
+
+        View view = getView();
+        if (view != null) {
+            view.setVisibility(View.VISIBLE);
+        }
     }
 }

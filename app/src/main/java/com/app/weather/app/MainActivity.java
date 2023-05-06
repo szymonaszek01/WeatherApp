@@ -20,19 +20,17 @@ import com.app.weather.app.dto.OpenWeatherGeoResponseDto;
 import com.app.weather.app.fragment.GeoDetailsFragment;
 import com.app.weather.app.fragment.NavBarFragment;
 import com.app.weather.app.fragment.WeatherDetailsFragment;
-import com.app.weather.app.model.FavouriteCityList;
 import com.app.weather.app.util.ConstantUtil;
 import com.app.weather.app.util.FileStorageUtil;
 import com.app.weather.app.util.OpenWeatherUtil;
 import com.app.weather.app.viewmodel.MyViewModel;
 
-import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity {
 
-    private OpenWeatherDto openWeatherDto = null;
+    private OpenWeatherDto lastSelectedOpenWeatherDto = null;
 
     private final FragmentManager fragmentManager = getSupportFragmentManager();
 
@@ -40,11 +38,11 @@ public class MainActivity extends AppCompatActivity {
 
     private FragmentStateAdapter pagerAdapter;
 
-    private Integer numOfPages = 6;
-
-    private String lastSelectedCityName = null;
+    private final Integer numOfPages = 6;
 
     private String lastSelectedUnitSystem = null;
+
+    private String lastSelectedRefreshingInterval = null;
 
     private MyViewModel myViewModel;
 
@@ -61,65 +59,71 @@ public class MainActivity extends AppCompatActivity {
         myViewModel = new ViewModelProvider(this).get(MyViewModel.class);
         FileStorageUtil.createInstance(this.getPreferences(Context.MODE_PRIVATE));
 
-        // --- TO REMOVE AFTER FIRST RUN --- //
-//         FileStorageUtil.getInstance().getAllKeys().forEach(key -> FileStorageUtil.getInstance().removeOpenWeatherDto(key));
-//         FileStorageUtil.getInstance().saveLastSelectedUnitSystem("Metric");
-//         FileStorageUtil.getInstance().updateFavouriteCityList(new FavouriteCityList(new ArrayList<>()));
-        // --- TO REMOVE AFTER FIRST RUN --- //
-
-        lastSelectedCityName = FileStorageUtil.getInstance().getLastSelectedCityName();
-        lastSelectedUnitSystem = FileStorageUtil.getInstance().getLastSelectedUnitSystem();
-
         viewPager = findViewById(R.id.pager);
         pagerAdapter = new WeeklySliderAdapter(this, numOfPages);
         viewPager.setAdapter(pagerAdapter);
         viewPager.setFocusedByDefault(false);
         fragmentManager.beginTransaction()
                 .setReorderingAllowed(true)
-                .add(R.id.nav_bar_fragment, NavBarFragment.class, null)
-                .add(R.id.geo_details_fragment, GeoDetailsFragment.class, null)
-                .add(R.id.weather_details_fragment, WeatherDetailsFragment.class, null)
+                .replace(R.id.nav_bar_fragment, NavBarFragment.class, null)
+                .replace(R.id.geo_details_fragment, GeoDetailsFragment.class, null)
+                .replace(R.id.weather_details_fragment, WeatherDetailsFragment.class, null)
                 .commit();
 
-        if (lastSelectedCityName != null) {
-            openWeatherDto = FileStorageUtil.getInstance().getOpenWeatherDto(lastSelectedCityName);
-            myViewModel.setOpenWeatherDto(openWeatherDto);
+        if (FileStorageUtil.getInstance().getLastSelectedCityName() != null) {
+            lastSelectedOpenWeatherDto = FileStorageUtil.getInstance().getOpenWeatherDto(FileStorageUtil.getInstance().getLastSelectedCityName());
+            lastSelectedUnitSystem = FileStorageUtil.getInstance().getLastSelectedUnitSystem();
+            lastSelectedRefreshingInterval = FileStorageUtil.getInstance().getLastSelectedRefreshingInterval();
+
+            myViewModel.setOpenWeatherDto(lastSelectedOpenWeatherDto);
+            myViewModel.setSelectedUnitSystem(lastSelectedUnitSystem);
+            myViewModel.setSelectedRefreshingInterval(lastSelectedRefreshingInterval);
+
             viewPager.setCurrentItem(0);
         }
 
-        if (OpenWeatherUtil.getInstance().isConnectedToNetwork(getApplicationContext())) {
-            onWeatherGeoResponse(lastSelectedCityName);
+        if (OpenWeatherUtil.getInstance().isConnectedToNetwork(getApplicationContext()) && lastSelectedOpenWeatherDto != null) {
+            onWeatherGeoResponse(lastSelectedOpenWeatherDto.getOpenWeatherGeoResponseDto().getName());
         } else {
             OpenWeatherUtil.getInstance().showToast(getApplicationContext(), "No network connection");
         }
 
-        myViewModel.getOpenWeatherDto().observe(this, data -> openWeatherDto = data);
+        myViewModel.getOpenWeatherDto().observe(this, data -> lastSelectedOpenWeatherDto = data);
+        myViewModel.getSelectedUnitSystem().observe(this, data -> lastSelectedUnitSystem = data);
+        myViewModel.getSelectedRefreshingInterval().observe(this, data -> lastSelectedRefreshingInterval = data);
 
-//        timer.scheduleAtFixedRate(new TimerTask() {
-//            @Override
-//            public void run() {
-//                if (lastSelectedCityName != null) {
-//                    onWeatherGeoResponse(lastSelectedCityName);
-//                }
-//            }
-//        }, 0, ConstantUtil.INTERVAL);
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                if (lastSelectedOpenWeatherDto != null) {
+                    onWeatherGeoResponse(lastSelectedOpenWeatherDto.getOpenWeatherGeoResponseDto().getName());
+                }
+            }
+        }, 0, Long.parseLong(lastSelectedRefreshingInterval != null ? lastSelectedRefreshingInterval : ConstantUtil.INTERVAL) * 1000 * 60);
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        if (openWeatherDto != null) {
-            FileStorageUtil.getInstance().saveLastSelectedCityName(openWeatherDto.getOpenWeatherGeoResponseDto().getName());
-            FileStorageUtil.getInstance().saveLastSelectedUnitSystem(OpenWeatherUtil.getInstance().weatherDetailsCurrentMapper(openWeatherDto.getOpenWeatherDataResponseDto()).getUnitSystem());
-            FileStorageUtil.getInstance().saveOpenWeatherDto(openWeatherDto);
+        if (lastSelectedOpenWeatherDto != null) {
+            FileStorageUtil.getInstance().saveLastSelectedCityName(lastSelectedOpenWeatherDto.getOpenWeatherGeoResponseDto().getName());
+            FileStorageUtil.getInstance().saveLastSelectedUnitSystem(lastSelectedUnitSystem);
+            FileStorageUtil.getInstance().saveOpenWeatherDto(lastSelectedOpenWeatherDto);
         }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        timer.cancel();
+        timer.purge();
     }
 
     private void onWeatherGeoResponse(String cityName) {
         OpenWeatherApiImpl.getInstance().getOpenWeatherGeo(cityName, new OpenWeatherApiCallback<OpenWeatherGeoResponseDto>() {
             @Override
             public void onSuccess(OpenWeatherGeoResponseDto body) {
-                openWeatherDto.setOpenWeatherGeoResponseDto(body);
+                lastSelectedOpenWeatherDto.setOpenWeatherGeoResponseDto(body);
                 onWeatherDataResponse(body.getLat(), body.getLon());
                 Log.i(ConstantUtil.WEATHER_GEO_RESPONSE, body.toString());
             }
@@ -135,8 +139,8 @@ public class MainActivity extends AppCompatActivity {
         OpenWeatherApiImpl.getInstance().getOpenWeatherData(lat, lon, new OpenWeatherApiCallback<OpenWeatherDataResponseDto>() {
             @Override
             public void onSuccess(OpenWeatherDataResponseDto body) {
-                openWeatherDto.setOpenWeatherDataResponseDto(body);
-                myViewModel.setOpenWeatherDto(openWeatherDto);
+                lastSelectedOpenWeatherDto.setOpenWeatherDataResponseDto(body);
+                myViewModel.setOpenWeatherDto(lastSelectedOpenWeatherDto);
                 Log.i(ConstantUtil.WEATHER_DATA_RESPONSE, body.toString());
             }
 

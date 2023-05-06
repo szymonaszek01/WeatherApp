@@ -18,7 +18,6 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.app.weather.app.ExpandableMenuActivity;
 import com.app.weather.app.R;
 import com.app.weather.app.api.OpenWeatherApiCallback;
 import com.app.weather.app.api.OpenWeatherApiImpl;
@@ -36,6 +35,8 @@ public class NavBarFragment extends Fragment {
     private TextInputEditText textInputEditTextCityName;
 
     private MyViewModel myViewModel;
+
+    private ExpandableListDialogFragment expandableListDialogFragment;
 
     public NavBarFragment() {
     }
@@ -59,6 +60,7 @@ public class NavBarFragment extends Fragment {
         textInputEditTextCityName = view.findViewById(R.id.textInputEditText);
         myViewModel = new ViewModelProvider(requireActivity()).get(MyViewModel.class);
         openWeatherDto = new OpenWeatherDto(null, null);
+        expandableListDialogFragment = new ExpandableListDialogFragment();
 
         onTextInputEditTextEventListener();
 
@@ -72,13 +74,12 @@ public class NavBarFragment extends Fragment {
     }
 
     private void onHamburgerEventListener(View view) {
-        Intent intent = new Intent(getActivity(), ExpandableMenuActivity.class);
-
         ImageView imageView = view.findViewById(R.id.hamburger);
         imageView.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                startActivity(intent);
+            public void onClick(View view) {
+                expandableListDialogFragment.show(
+                        getChildFragmentManager(), "CityDialog");
             }
         });
     }

@@ -73,7 +73,7 @@ public class OpenWeatherUtil {
     }
 
     public void getIntervals(HashMap<String, List<String>> expandableListDetail) {
-        List<String> intervals = Arrays.asList("15", "30", "1");
+        List<String> intervals = Arrays.asList("1 minute", "15 minutes", "30 minutes", "60 minutes");
         expandableListDetail.put("Refreshing interval", intervals);
     }
 
