@@ -1,6 +1,7 @@
 package com.app.weather.app;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -20,11 +21,16 @@ import com.app.weather.app.dto.OpenWeatherGeoResponseDto;
 import com.app.weather.app.fragment.GeoDetailsFragment;
 import com.app.weather.app.fragment.NavBarFragment;
 import com.app.weather.app.fragment.WeatherDetailsFragment;
+import com.app.weather.app.fragment.WeeklyTabletFragment;
+import com.app.weather.app.model.FavouriteCityList;
 import com.app.weather.app.util.ConstantUtil;
 import com.app.weather.app.util.FileStorageUtil;
 import com.app.weather.app.util.OpenWeatherUtil;
 import com.app.weather.app.viewmodel.MyViewModel;
 
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -59,16 +65,27 @@ public class MainActivity extends AppCompatActivity {
         myViewModel = new ViewModelProvider(this).get(MyViewModel.class);
         FileStorageUtil.createInstance(this.getPreferences(Context.MODE_PRIVATE));
 
-        viewPager = findViewById(R.id.pager);
-        pagerAdapter = new WeeklySliderAdapter(this, numOfPages);
-        viewPager.setAdapter(pagerAdapter);
-        viewPager.setFocusedByDefault(false);
-        fragmentManager.beginTransaction()
-                .setReorderingAllowed(true)
-                .replace(R.id.nav_bar_fragment, NavBarFragment.class, null)
-                .replace(R.id.geo_details_fragment, GeoDetailsFragment.class, null)
-                .replace(R.id.weather_details_fragment, WeatherDetailsFragment.class, null)
-                .commit();
+        if (isTablet(getApplicationContext())) {
+            fragmentManager.beginTransaction()
+                    .setReorderingAllowed(true)
+                    .replace(R.id.nav_bar_fragment, NavBarFragment.class, null)
+                    .replace(R.id.geo_details_fragment, GeoDetailsFragment.class, null)
+                    .replace(R.id.weather_details_fragment, WeatherDetailsFragment.class, null)
+                    .replace(R.id.weekly_tablet_fragment, WeeklyTabletFragment.class, null)
+                    .commit();
+        } else {
+            viewPager = findViewById(R.id.pager);
+            pagerAdapter = new WeeklySliderAdapter(this, numOfPages);
+            viewPager.setAdapter(pagerAdapter);
+            viewPager.setFocusedByDefault(false);
+            viewPager.setCurrentItem(0);
+            fragmentManager.beginTransaction()
+                    .setReorderingAllowed(true)
+                    .replace(R.id.nav_bar_fragment, NavBarFragment.class, null)
+                    .replace(R.id.geo_details_fragment, GeoDetailsFragment.class, null)
+                    .replace(R.id.weather_details_fragment, WeatherDetailsFragment.class, null)
+                    .commit();
+        }
 
         if (FileStorageUtil.getInstance().getLastSelectedCityName() != null) {
             lastSelectedOpenWeatherDto = FileStorageUtil.getInstance().getOpenWeatherDto(FileStorageUtil.getInstance().getLastSelectedCityName());
@@ -78,8 +95,6 @@ public class MainActivity extends AppCompatActivity {
             myViewModel.setOpenWeatherDto(lastSelectedOpenWeatherDto);
             myViewModel.setSelectedUnitSystem(lastSelectedUnitSystem);
             myViewModel.setSelectedRefreshingInterval(lastSelectedRefreshingInterval);
-
-            viewPager.setCurrentItem(0);
         }
 
         if (OpenWeatherUtil.getInstance().isConnectedToNetwork(getApplicationContext()) && lastSelectedOpenWeatherDto != null) {
@@ -139,8 +154,22 @@ public class MainActivity extends AppCompatActivity {
         OpenWeatherApiImpl.getInstance().getOpenWeatherData(lat, lon, new OpenWeatherApiCallback<OpenWeatherDataResponseDto>() {
             @Override
             public void onSuccess(OpenWeatherDataResponseDto body) {
+                LocalDateTime localDateTime = LocalDateTime.ofEpochSecond(body.getCurrent().getDt(), 0, OffsetDateTime.now().getOffset());
+                localDateTime = localDateTime.plusSeconds(body.getTimezoneOffset());
+
+                String day = String.format("%02d", localDateTime.getDayOfMonth());
+                String month = String.format("%02d", localDateTime.getMonthValue());
+                String year = String.format("%04d", localDateTime.getYear());
+                String date = day + ConstantUtil.DOT + month + ConstantUtil.DOT + year;
+
+                String hour = String.format("%02d", localDateTime.getHour());
+                String minute = String.format("%02d", localDateTime.getMinute());
+                String time = hour + ":" + minute;
+
                 lastSelectedOpenWeatherDto.setOpenWeatherDataResponseDto(body);
                 myViewModel.setOpenWeatherDto(lastSelectedOpenWeatherDto);
+                OpenWeatherUtil.getInstance().showToast(getApplicationContext(), "Weather data updated at " + date + " " + time);
+
                 Log.i(ConstantUtil.WEATHER_DATA_RESPONSE, body.toString());
             }
 
@@ -149,5 +178,11 @@ public class MainActivity extends AppCompatActivity {
                 Log.i(ConstantUtil.WEATHER_DATA_RESPONSE, e.getMessage());
             }
         });
+    }
+
+    private boolean isTablet(Context context) {
+        Configuration config = context.getResources().getConfiguration();
+        int size = config.screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK;
+        return size >= Configuration.SCREENLAYOUT_SIZE_LARGE;
     }
 }
